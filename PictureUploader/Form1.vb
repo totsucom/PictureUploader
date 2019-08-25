@@ -18,6 +18,9 @@ Public Class Form1
         arg.imageDir = Ini.GetProfileString("Directory", "Image", FormSetting.GetDefaultImageDir())
         arg.port = Integer.Parse(Ini.GetProfileString("Network", "Port", FormSetting.DEFAULT_PORT_NO.ToString()))
 
+        'PIN
+        Dim r As New Random(Integer.Parse(Date.Now.ToString("HHmmss")))
+        arg.pin = (r.Next() + 10000).ToString()
 
         '自分のIPアドレスを列挙、コンボボックスに設定
         Dim ar As IpAddressInfo() = GetIPAddresses()
@@ -80,7 +83,7 @@ Public Class Form1
 
     Public Class IpAddressInfo
         Public address As String
-        Public nwkclass As Integer 'i = 0:クラスA 1:クラスB 2:クラスC 3:クラスD 4:クラスE
+        Public nwkclass As Integer ' = 0:クラスA 1:クラスB 2:クラスC 3:クラスD 4:クラスE
         Public Sub New(address As String, nwkclass As Integer)
             Me.address = address
             Me.nwkclass = nwkclass
@@ -182,6 +185,7 @@ Public Class Form1
             Exit Sub
         End If
 
+        'QRコード作成の準備
         Dim qrcode = New BarcodeWriter
         With qrcode
             .Format = BarcodeFormat.QR_CODE
@@ -193,11 +197,19 @@ Public Class Form1
             End With
         End With
 
+        'QRコード画像を生成、表示
         Dim ii As IpAddressInfo = ComboBoxIPAddresses.SelectedItem
-        Dim url As String = "http://" & ii.address & ":"c & arg.port.ToString()
+        Dim url As String
+        SyncLock arg
+            url = "http://" & ii.address & ":"c & arg.port.ToString() & "/?PIN=" & arg.pin
+        End SyncLock
         PictureBoxQR.Image = qrcode.Write(url)
-        LinkLabelQRInfo.ForeColor = Color.Black
-        LinkLabelQRInfo.Text = url
+
+        With LinkLabelQRInfo
+            .ForeColor = Color.Black
+            .Text = ii.address
+            .Tag = url
+        End With
     End Sub
 
     Public Class WorkerArg
@@ -217,6 +229,7 @@ Public Class Form1
         Public inst As INSTRUCTION
         Public lastLog As String
         Public logUpdated As Boolean
+        Public pin As String
     End Class
 
     'ウェブサーバースレッド
@@ -243,7 +256,7 @@ Public Class Form1
         End SyncLock
 
         '権限エラーを回避するのにマニフェストが必要 level="requireAdministrator"
-        '実行PC以外からアクセスするのにWindowsDefenderFirewallにて受信規則 TCP ポート8000を開放すべし
+        '実行PC以外からアクセスするのにWindowsDefenderFirewallにて受信規則 TCP ポート8005を開放すべし
 
         listener.Start()
 
@@ -282,8 +295,10 @@ Public Class Form1
             Dim from As String = context.Request.LocalEndPoint.ToString()
             Dim uri As String = context.Request.Url.ToString()
             Dim i As Integer = uri.IndexOf(from)
+            Dim path As String = ""
             If i >= 0 Then
-                Dim path As String = uri.Substring(i + from.Length)
+                path = uri.Substring(i + from.Length)
+                Debug.Print("PATH: " & path)
                 If path = "/favicon.ico" Then
                     'faviconは無いので404を返す
                     res = context.Response
@@ -392,13 +407,22 @@ Public Class Form1
 
             res = context.Response
             res.StatusCode = 200
-            content = Encoding.UTF8.GetBytes(
-            "<!DOCTYPE html><html><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1"">" &
-            "<title>PictureUploader</title></head>" &
-            "<body><h1>PictureUploader</h1>" & htmlMessage &
-            "<form action=""upload.php"" method=""post"" enctype=""multipart/form-data"">" &
-            "<p><input type=""file"" name=""upfile"" id=""upfile"" accept=""image/*"" /></p>" &
-            "<p><input type=""submit"" name=""save"" value=""アップロード"" /></p></form></body></html>")
+            SyncLock arg
+                If path = "/?PIN=" & arg.pin Then
+                    content = Encoding.UTF8.GetBytes(
+                    "<!DOCTYPE html><html><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1"">" &
+                    "<title>PictureUploader</title></head>" &
+                    "<body><h1>PictureUploader</h1>" & htmlMessage &
+                    "<form action=""/?PIN=" & arg.pin & """ method=""post"" enctype=""multipart/form-data"">" &
+                    "<p><input type=""file"" name=""upfile"" id=""upfile"" accept=""image/*"" /></p>" &
+                    "<p><input type=""submit"" name=""save"" value=""アップロード"" /></p></form></body></html>")
+                Else
+                    content = Encoding.UTF8.GetBytes(
+                    "<!DOCTYPE html><html><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1"">" &
+                    "<title>PictureUploader</title></head>" &
+                    "<body><h1>PictureUploader</h1>このアドレスは無効です<br>ＱＲコードを再スキャンしてください</body></html>")
+                End If
+            End SyncLock
             res.OutputStream.Write(content, 0, content.Length)
             res.Close()
 
@@ -619,7 +643,7 @@ Public Class Form1
     Private Sub LinkLabelQRInfo_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabelQRInfo.LinkClicked
         If LinkLabelQRInfo.ForeColor = Color.Black Then
             Try
-                Process.Start(LinkLabelQRInfo.Text)
+                Process.Start(LinkLabelQRInfo.Tag)
             Catch ex As Exception
                 MsgBox("例外が発生しました" & vbNewLine & ex.Message, MsgBoxStyle.OkOnly Or MsgBoxStyle.Critical, "PictureUploader")
             End Try

@@ -19,8 +19,8 @@ Public Class Form1
         arg.port = Integer.Parse(Ini.GetProfileString("Network", "Port", FormSetting.DEFAULT_PORT_NO.ToString()))
 
         'PIN
-        Dim r As New Random(Integer.Parse(Date.Now.ToString("HHmmss")))
-        arg.pin = (r.Next() + 10000).ToString()
+        'Dim r As New Random(Integer.Parse(Date.Now.ToString("HHmmss")))
+        'arg.pin = (r.Next() + 10000).ToString()
 
         '自分のIPアドレスを列挙、コンボボックスに設定
         Dim ar As IpAddressInfo() = GetIPAddresses()
@@ -185,6 +185,12 @@ Public Class Form1
             Exit Sub
         End If
 
+        CreateNewQRCode()
+    End Sub
+
+    'QRコードを生成
+    Private Sub CreateNewQRCode()
+
         'QRコード作成の準備
         Dim qrcode = New BarcodeWriter
         With qrcode
@@ -197,11 +203,15 @@ Public Class Form1
             End With
         End With
 
+        Dim r As New Random(Integer.Parse(Date.Now.ToString("HHmmss")))
+        arg.pin = (r.Next() + 10000).ToString()
+
         'QRコード画像を生成、表示
         Dim ii As IpAddressInfo = ComboBoxIPAddresses.SelectedItem
         Dim url As String
         SyncLock arg
             url = "http://" & ii.address & ":"c & arg.port.ToString() & "/?PIN=" & arg.pin
+            Debug.Print(url)
         End SyncLock
         PictureBoxQR.Image = qrcode.Write(url)
 

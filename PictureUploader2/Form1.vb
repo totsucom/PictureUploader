@@ -4,18 +4,6 @@ Imports System.Net
 Imports System.Net.NetworkInformation
 Imports System.Web
 
-'<div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
-
-
-
-
-'<div>Icons made by <a href="https://www.flaticon.com/authors/dave-gandy" title="Dave Gandy">Dave Gandy</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
-
-
-'<div>Icons made by <a href="http://fontawesome.io" title="Dave Gandy">Dave Gandy</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
-
-
-
 Public Class Form1
 
     Const MSGBOX_TITLE = "PiPデスクトップ"
@@ -147,39 +135,8 @@ Public Class Form1
 
     'QRコードアイコンがクリックされた
     Private Sub ToolStripButtonQRCode_Click(sender As Object, e As EventArgs) Handles ToolStripButtonQRCode.Click
-
-        'QRコードを表示
         Dim dlg As New FormQRCode(etc.CreateQrCodeParam(pcid, key1), Me.Location)
         dlg.Show()
-
-        ''サーバーに自信のIDを登録する
-        'Dim url = "http://mae8bit.php.xdomain.jp/reg.php?pw="
-        'url &= HttpUtility.UrlEncode("69bb96abd7834e4dea838d8163d7c5d9690cc8fcb24bdda17a9d883f70cd4716") 'パスワード的なもの
-        'url &= "&id=" & HttpUtility.UrlEncode(pcid) '自身のID
-        'Dim webreq As System.Net.HttpWebRequest = DirectCast(System.Net.WebRequest.Create(url), System.Net.HttpWebRequest)
-
-        'Try
-        '    '参考 https://dobon.net/vb/dotnet/internet/webrequest.html
-
-        '    'サーバーからの応答を受信。ここではHTTPステータスコードのみを取得
-        '    Dim webres As System.Net.HttpWebResponse = DirectCast(webreq.GetResponse(), System.Net.HttpWebResponse)
-        '    webres.Close()
-
-        '    '取得したソースを表示する
-        '    Debug.Print(webres.StatusCode.ToString)
-        '    If webres.StatusCode <> HttpStatusCode.OK Then
-        '        dlg.Close()
-        '        dlg.Dispose()
-        '        MsgBox("サーバーに拒否されました", vbExclamation, MSGBOX_TITLE)
-        '        Exit Sub
-        '    End If
-        'Catch ex As Exception
-        '    Debug.Print(ex.Message)
-        '    dlg.Close()
-        '    dlg.Dispose()
-        '    MsgBox("サーバーに接続できませんでした", vbExclamation, MSGBOX_TITLE)
-        '    Exit Sub
-        'End Try
     End Sub
 
     'リロードボタンがクリックされた
@@ -340,7 +297,8 @@ Public Class Form1
         'サーバーに問い合わせ
         Dim url = "http://mae8bit.php.xdomain.jp/get.php?usr="
         url &= HttpUtility.UrlEncode(pcid) '自身のID
-        url &= "&pw=s0rcfwnr1xhw9vn3uerhconiefcei5mhvrometrgierp8ow"
+        url &= "&pw="
+        url &= password.forWebServer 'Webサーバー側のPHPコードとの通信で使う固定の共通パスワード
 
         Dim webreq As System.Net.HttpWebRequest = DirectCast(System.Net.WebRequest.Create(url), System.Net.HttpWebRequest)
         Dim code As HttpStatusCode

@@ -4,31 +4,6 @@ Imports System.Security.Cryptography
 Public Class etc
     Private Shared r As System.Random = Nothing
 
-    'Public Shared Function GenerateMyId() As String
-    '    If r Is Nothing Then r = New System.Random()
-    '    Dim sb As New Text.StringBuilder
-    '    For Each b As Byte In System.Text.Encoding.UTF8.GetBytes(My.Computer.Name)
-    '        sb.Append(b.ToString("X2"))
-    '    Next
-    '    Dim bs As Byte() = New Byte(7) {}
-    '    r.NextBytes(bs)
-    '    For Each b As Byte In bs
-    '        sb.Append(b.ToString("X2"))
-    '    Next
-    '    Return sb.ToString
-    'End Function
-
-    'Public Shared Function GenerateKey1() As String
-    '    If r Is Nothing Then r = New System.Random()
-    '    Dim bs As Byte() = New Byte(15) {}
-    '    r.NextBytes(bs)
-    '    Dim sb As New Text.StringBuilder
-    '    For Each b As Byte In bs
-    '        sb.Append(b.ToString("X2"))
-    '    Next
-    '    Return sb.ToString '16bytes=32chars
-    'End Function
-
     'コンピューター情報を用いるため、pcid,key1は同一パソコンであればパソコン毎に異な
     Public Shared Function GetMyInfo(ByRef pcid As String, ByRef key1 As String) As Boolean
         Dim drive = "PHYSICALDRIVE0"
